@@ -7,11 +7,33 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileText, LogOut, LayoutDashboard, Sparkles, CheckCircle2, TrendingUp, Target } from 'lucide-react';
 import { toast } from 'sonner';
+import * as pdfjsLib from 'pdfjs-dist';
 
 const Index = () => {
   const navigate = useNavigate();
   const { user, signOut, loading: authLoading } = useAuth();
   const [uploading, setUploading] = useState(false);
+
+  const extractTextFromPDF = async (file: File): Promise<string> => {
+    // Set worker path for PDF.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    
+    let fullText = '';
+    
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += pageText + '\n';
+    }
+    
+    return fullText.trim();
+  };
 
   const handleFileSelect = async (file: File) => {
     if (!user) {
@@ -22,8 +44,20 @@ const Index = () => {
 
     setUploading(true);
     try {
-      // Read file as text
-      const text = await file.text();
+      let text: string;
+      
+      // Extract text based on file type
+      if (file.type === 'application/pdf') {
+        toast.info('Extracting text from PDF...');
+        text = await extractTextFromPDF(file);
+      } else {
+        // For DOC/DOCX or plain text files
+        text = await file.text();
+      }
+
+      if (!text || text.trim().length < 50) {
+        throw new Error('Could not extract enough text from the file. Please ensure your resume has readable content.');
+      }
 
       // Call edge function to analyze resume
       const { data, error } = await supabase.functions.invoke('analyze-resume', {
