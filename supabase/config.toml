@@ -1,0 +1,7 @@
+project_id = "fcbppnnskulmsrtezrdp"
+
+[functions.analyze-resume]
+verify_jwt = true
+
+[functions.job-match]
+verify_jwt = true
