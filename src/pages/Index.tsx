@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { FileText, LogOut, LayoutDashboard, Sparkles, CheckCircle2, TrendingUp, Target } from 'lucide-react';
 import { toast } from 'sonner';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -15,8 +16,8 @@ const Index = () => {
   const [uploading, setUploading] = useState(false);
 
   const extractTextFromPDF = async (file: File): Promise<string> => {
-    // Set worker path for PDF.js
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    // Set worker path for PDF.js from installed package
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
